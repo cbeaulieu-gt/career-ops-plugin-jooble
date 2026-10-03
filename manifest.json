@@ -1,0 +1,13 @@
+{
+  "id": "jooble",
+  "name": "Jooble",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "description": "Search Jooble's authenticated US jobs API with bounded requests.",
+  "hooks": ["provider"],
+  "requiredEnv": ["JOOBLE_API_KEY"],
+  "allowedHosts": ["jooble.org"],
+  "skill": "skill.md",
+  "humanInTheLoop": true,
+  "homepage": "https://github.com/cbeaulieu-gt/career-ops-plugin-jooble"
+}
