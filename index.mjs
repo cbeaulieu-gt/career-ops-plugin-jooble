@@ -77,7 +77,11 @@ function normalizeResult(row, normalizeUrl) {
   // Jooble documents this as last modification, not original publication.
   // Require an ISO timestamp; ignore localized/invalid/non-positive values.
   const updated = text(row.updated);
-  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$/.test(updated)) {
+  const parts = updated.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$/);
+  const [year, month, day, hour, minute, second] = parts ? parts.slice(1, 7).map(Number) : [];
+  if (parts && month >= 1 && month <= 12 && day >= 1
+    && day <= new Date(Date.UTC(year, month, 0)).getUTCDate()
+    && hour < 24 && minute < 60 && second < 60) {
     // No timezone is supplied in Jooble's official example: interpret it as UTC
     // consistently, rather than using the local machine's timezone.
     const iso = /(?:Z|[+-]\d{2}:\d{2})$/.test(updated) ? updated : `${updated}Z`;

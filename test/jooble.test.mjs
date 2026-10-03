@@ -330,6 +330,18 @@ test('does not count a stable ID twice when its link changes between pages', asy
   assert.equal(jobs.length, 4);
 });
 
+test('rejects calendar-invalid dates and clock rollovers while accepting leap days', async () => {
+  for (const updated of ['2026-02-31T12:00:00Z', '2025-02-29T12:00:00Z',
+    '2026-04-31T12:00:00Z', '2026-01-01T24:00:00Z']) {
+    const { ctx } = context([{ totalCount: 1, jobs: [row(1, { updated })] }]);
+    const [job] = await plugin.provider.fetch(entry, ctx);
+    assert.equal(job.updatedAt, undefined);
+  }
+  const { ctx } = context([{ totalCount: 1, jobs: [row(1, { updated: '2024-02-29T12:00:00+02:00' })] }]);
+  const [job] = await plugin.provider.fetch(entry, ctx);
+  assert.equal(job.updatedAt, Date.parse('2024-02-29T10:00:00Z'));
+});
+
 let failures = 0;
 for (const { name, run } of cases) {
   try { await run(); console.log(`PASS ${name}`); }
