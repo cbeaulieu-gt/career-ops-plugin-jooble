@@ -28,7 +28,8 @@ node plugins.mjs enable jooble --confirm
 
 ## Search configuration
 
-Add an entry under `job_boards:` or `tracked_companies:` in `portals.yml`:
+Add an entry under `job_boards:` in `portals.yml` so the scanner counts this
+multi-employer feed as a board rather than an individual employer:
 
 ```yaml
 job_boards:
