@@ -55,7 +55,7 @@ Optional settings:
 | Setting | Default | Limit / meaning |
 |---|---|---|
 | `results_per_page` | 20 | Maximum 50 requested; the API may return fewer |
-| `max_pages` | 1 | Maximum 20; a smaller host-provided `ctx.maxPages` also applies |
+| `max_pages` | 1 | Maximum 20; capped by `ctx.maxPages`, or one page when the host omits its budget |
 | `max_results` | 400 | Maximum 400 unique normalized jobs |
 | `radius` | Omitted | Kilometer radius: 0, 4, 8, 16, 26, 40, or 80 |
 | `salary` | Omitted | Non-negative integer minimum salary sent as documented by Jooble |
@@ -63,13 +63,16 @@ Optional settings:
 | `companysearch` | Omitted | Boolean; true searches company names |
 
 Pagination stops at an empty or repeated page, at the API's total count, or at
-the configured page/result bound. A short page alone is not treated as proof
+the configured page/result bound. Overlapping pages count only unique raw rows
+toward the API's total count. A short page alone is not treated as proof
 that the results have ended. IDs and posting URLs remove duplicates. When the
 engine provides `ctx.normalizePostingUrl`, its canonical keys are used; older
 contexts use exact URLs, so links differing only in tracking parameters may
 remain separate until the scanner applies its own deduplication.
 Numeric Jooble IDs outside JavaScript's exact integer range use
 `url:<canonical-posting-url>` as their identity, avoiding rounded-ID collisions.
+Older Career-Ops hosts do not pass the scanner's page budget into the plugin
+context; those contexts are limited to one page even if `max_pages` is larger.
 
 ## API limits and data semantics
 

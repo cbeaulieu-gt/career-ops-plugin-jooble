@@ -21,6 +21,7 @@ function context(responses = [{ totalCount: 1, jobs: [row()] }], overrides = {})
   const delays = [];
   const ctx = {
     env: { JOOBLE_API_KEY: 'test/key?with secret' },
+    maxPages: 20,
     /** Model canonical URL deduplication by dropping tracking parameters. */
     normalizePostingUrl(value) {
       const url = new URL(value);
@@ -293,6 +294,20 @@ test('continues past distinct malformed pages whose rows lack both identity fiel
   const jobs = await plugin.provider.fetch({ ...entry, max_pages: 3 }, ctx);
   assert.equal(calls.length, 3);
   assert.equal(jobs.length, 1);
+});
+
+test('limits older engine contexts to one page when the host budget is unavailable', async () => {
+  const { ctx, calls } = context([{ totalCount: 100, jobs: [row()] }], { maxPages: undefined });
+  await plugin.provider.fetch({ ...entry, max_pages: 20 }, ctx);
+  assert.equal(calls.length, 1);
+});
+
+test('counts unique raw rows before stopping at totalCount across overlapping pages', async () => {
+  const { ctx, calls } = context([{ totalCount: 4, jobs: [row(1), row(2)] },
+    { totalCount: 4, jobs: [row(2), row(3)] }, { totalCount: 4, jobs: [row(4)] }]);
+  const jobs = await plugin.provider.fetch({ ...entry, max_pages: 3 }, ctx);
+  assert.equal(calls.length, 3);
+  assert.equal(jobs.length, 4);
 });
 
 let failures = 0;

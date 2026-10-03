@@ -148,7 +148,9 @@ export default {
       const normalizeUrl = typeof ctx.normalizePostingUrl === 'function'
         ? ctx.normalizePostingUrl : value => value;
       const configuredPages = bounded(entry?.max_pages, 1, PAGE_LIMIT);
-      const maxPages = bounded(ctx.maxPages, configuredPages, configuredPages);
+      // Older hosts discard the scanner's context. Fail closed to one page
+      // rather than bypassing an unavailable host budget with the entry limit.
+      const maxPages = bounded(ctx.maxPages, 1, configuredPages);
       const resultLimit = bounded(entry?.max_results, RESULT_LIMIT, RESULT_LIMIT);
       const body = requestBody(entry, bounded(entry?.results_per_page, 20, 50));
       const url = `${API_ROOT}${encodeURIComponent(key)}`;
@@ -156,7 +158,6 @@ export default {
       const seenIds = new Set();
       const seenUrls = new Set();
       const rawSeen = new Set();
-      let rawCount = 0;
       for (let page = 1; page <= maxPages; page += 1) {
         const payload = await fetchPage(ctx, url, { ...body, page });
         if (!payload || Array.isArray(payload) || !Array.isArray(payload.jobs)
@@ -165,7 +166,6 @@ export default {
         }
         if (payload.jobs.length === 0) break;
         let newRaw = 0;
-        rawCount += payload.jobs.length;
         for (const row of payload.jobs) {
           const rawKey = JSON.stringify(row?.id === undefined && row?.link === undefined
             ? row : [row?.id, row?.link]);
@@ -179,7 +179,7 @@ export default {
           jobs.push(job);
           if (jobs.length >= resultLimit) return jobs;
         }
-        if (newRaw === 0 || (Number.isSafeInteger(payload.totalCount) && rawCount >= payload.totalCount)) break;
+        if (newRaw === 0 || (Number.isSafeInteger(payload.totalCount) && rawSeen.size >= payload.totalCount)) break;
       }
       return jobs;
     },
