@@ -6,15 +6,18 @@ const RESULT_LIMIT = 400;
 const RADII = new Set([0, 4, 8, 16, 26, 40, 80]);
 const NETWORK_CODES = /^(EAI_AGAIN|ECONNRESET|ECONNREFUSED|ENETUNREACH|ENOTFOUND|ETIMEDOUT|UND_ERR_CONNECT_TIMEOUT|UND_ERR_HEADERS_TIMEOUT|UND_ERR_SOCKET)$/;
 
+/** Return trimmed string data, treating other types as absent. */
 function text(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+/** Clamp a positive integer budget; use the default for invalid values. */
 function bounded(value, fallback, limit) {
   const number = Number(value);
   return Number.isInteger(number) && number > 0 ? Math.min(number, limit) : fallback;
 }
 
+/** Validate an optional integer search field without coercing null or booleans. */
 function optionalNumber(entry, field, minimum) {
   if (entry[field] === undefined) return undefined;
   const value = entry[field];
@@ -28,6 +31,7 @@ function optionalNumber(entry, field, minimum) {
   return number;
 }
 
+/** Build the documented Jooble search payload or reject invalid configuration. */
 function requestBody(entry, perPage) {
   const keywords = text(entry?.keywords ?? entry?.query);
   const location = text(entry?.location);
@@ -50,6 +54,7 @@ function requestBody(entry, perPage) {
   return body;
 }
 
+/** Normalize a listing, preserving update semantics and exact URL identities. */
 function normalizeResult(row, normalizeUrl) {
   if (!row || typeof row !== 'object') return null;
   const id = typeof row.id === 'number' && Number.isFinite(row.id) ? String(row.id) : text(row.id);
@@ -82,12 +87,14 @@ function normalizeResult(row, normalizeUrl) {
   return job;
 }
 
+/** Recognize transient HTTP and transport errors eligible for bounded retries. */
 function retryable(error) {
   const status = error?.status;
   if (status !== undefined) return status === 429 || (status >= 500 && status <= 599);
   return error?.name === 'AbortError' || NETWORK_CODES.test(String(error?.code ?? error?.cause?.code ?? ''));
 }
 
+/** Honor Retry-After or exponential backoff with an eight-second ceiling. */
 function retryDelay(error, attempt) {
   const value = error?.retryAfter;
   if (value !== undefined && value !== null && value !== '') {
@@ -98,6 +105,7 @@ function retryDelay(error, attempt) {
   return Math.min(500 * 2 ** attempt, 8000);
 }
 
+/** Fetch one page with at most three attempts and credential-safe final errors. */
 async function fetchPage(ctx, url, body) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
@@ -125,7 +133,9 @@ async function fetchPage(ctx, url, body) {
 export default {
   provider: {
     id: 'jooble',
+    /** Require an explicit provider entry; never claim arbitrary career URLs. */
     detect() { return null; },
+    /** Fetch bounded pages through the engine context and return deduplicated jobs. */
     fetch: async (entry, ctx) => {
       const key = text(ctx?.env?.JOOBLE_API_KEY);
       if (!key) throw new Error('jooble: JOOBLE_API_KEY must be set in .env');

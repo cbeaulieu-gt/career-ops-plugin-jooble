@@ -4,26 +4,32 @@ import plugin from '../index.mjs';
 // The plugin static audit permits node:assert but not node:test. Keep the
 // offline tests runnable without importing a module the installer rejects.
 const cases = [];
+/** Register an offline test for the serial runner below. */
 function test(name, run) { cases.push({ name, run }); }
 
 const entry = { keywords: 'software engineer', location: 'United States' };
+/** Create a valid API listing fixture with per-case overrides. */
 const row = (id = 1, overrides = {}) => ({
   id, title: ' Software Engineer ', company: ' Acme ', location: ' Remote, US ',
   link: `https://jooble.org/jdp/${id}`, snippet: ' A short snippet ',
   salary: '$100,000 - $120,000', source: 'Employer', type: 'Full-time',
   updated: '2026-10-01T12:00:00.000Z', ...overrides,
 });
+/** Create a fake engine context that records requests and retry delays. */
 function context(responses = [{ totalCount: 1, jobs: [row()] }], overrides = {}) {
   const calls = [];
   const delays = [];
   const ctx = {
     env: { JOOBLE_API_KEY: 'test/key?with secret' },
+    /** Model canonical URL deduplication by dropping tracking parameters. */
     normalizePostingUrl(value) {
       const url = new URL(value);
       for (const key of [...url.searchParams.keys()]) if (key.startsWith('utm_')) url.searchParams.delete(key);
       return url.href;
     },
+    /** Record retry waits without delaying the offline suite. */
     sleep: async (ms) => { delays.push(ms); },
+    /** Return the next fixture page or throw a controlled transport failure. */
     fetchJson: async (url, opts) => {
       calls.push({ url: String(url), opts, body: JSON.parse(opts.body) });
       const response = responses[Math.min(calls.length - 1, responses.length - 1)];
