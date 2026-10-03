@@ -182,7 +182,7 @@ export default {
           jobs.push(job);
           if (jobs.length >= resultLimit) return jobs;
         }
-        if (newRaw === 0 || (Number.isSafeInteger(payload.totalCount) && rawSeen.size >= payload.totalCount)) break;
+        if (newRaw === 0 || (Number.isSafeInteger(payload.totalCount) && seenIds.size >= payload.totalCount)) break;
       }
       return jobs;
     },

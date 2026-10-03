@@ -63,8 +63,9 @@ Optional settings:
 | `companysearch` | Omitted | Boolean; true searches company names |
 
 Pagination stops at an empty or repeated page, at the API's total count, or at
-the configured page/result bound. Overlapping pages count only unique raw rows
-toward the API's total count. A short page alone is not treated as proof
+the configured page/result bound. Only unique normalized listings count
+toward the API's total count; malformed rows cannot consume that progress.
+A short page alone is not treated as proof
 that the results have ended. IDs and posting URLs remove duplicates. When the
 engine provides `ctx.normalizePostingUrl`, its canonical keys are used; older
 contexts use exact URLs, so links differing only in tracking parameters may

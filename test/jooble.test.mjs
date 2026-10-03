@@ -342,6 +342,14 @@ test('rejects calendar-invalid dates and clock rollovers while accepting leap da
   assert.equal(job.updatedAt, Date.parse('2024-02-29T10:00:00Z'));
 });
 
+test('does not count a malformed listing and its later valid version twice', async () => {
+  const { ctx, calls } = context([{ totalCount: 2, jobs: [row(1, { title: '' })] },
+    { totalCount: 2, jobs: [row(1)] }, { totalCount: 2, jobs: [row(2)] }]);
+  const jobs = await plugin.provider.fetch({ ...entry, max_pages: 3 }, ctx);
+  assert.equal(calls.length, 3);
+  assert.equal(jobs.length, 2);
+});
+
 let failures = 0;
 for (const { name, run } of cases) {
   try { await run(); console.log(`PASS ${name}`); }
