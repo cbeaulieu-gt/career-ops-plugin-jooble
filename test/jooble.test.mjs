@@ -321,6 +321,15 @@ test('continues past malformed pages with null or blank identity fields', async 
   }
 });
 
+test('does not count a stable ID twice when its link changes between pages', async () => {
+  const { ctx, calls } = context([{ totalCount: 4, jobs: [row(1), row(2)] },
+    { totalCount: 4, jobs: [row(2, { link: 'https://jooble.org/jdp/2?utm_source=other' }), row(3)] },
+    { totalCount: 4, jobs: [row(4)] }]);
+  const jobs = await plugin.provider.fetch({ ...entry, max_pages: 3 }, ctx);
+  assert.equal(calls.length, 3);
+  assert.equal(jobs.length, 4);
+});
+
 let failures = 0;
 for (const { name, run } of cases) {
   try { await run(); console.log(`PASS ${name}`); }
