@@ -94,7 +94,8 @@ Malformed responses fail visibly rather than appearing to be an empty board.
 
 Only `ctx.env.JOOBLE_API_KEY` supplies the credential. Every request uses
 Career-Ops' guarded `ctx.fetchJson` transport and the manifest restricts egress
-to `jooble.org`. Redirects are rejected. Because the key is part of the URL,
+to `jooble.org`. The engine validates redirect destinations against that
+HTTPS host restriction. Because the key is part of the URL,
 errors expose only a safe failure message, HTTP status when available, and
 attempt count; upstream error text and causes are discarded.
 

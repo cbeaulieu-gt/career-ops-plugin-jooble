@@ -51,7 +51,7 @@ test('uses the pinned US host, an encoded key, and documented request fields', a
   await plugin.provider.fetch({ ...entry, radius: 80, salary: 100000, companysearch: false, search_mode: 0 }, ctx);
   assert.equal(calls[0].url, 'https://jooble.org/api/test%2Fkey%3Fwith%20secret');
   assert.equal(calls[0].opts.method, 'POST');
-  assert.equal(calls[0].opts.redirect, 'error');
+  assert.equal(calls[0].opts.redirect, undefined);
   assert.equal(calls[0].opts.headers['Content-Type'], 'application/json');
   assert.deepEqual(calls[0].body, { keywords: 'software engineer', location: 'United States', page: 1,
     ResultOnPage: 20, radius: '80', salary: 100000, companysearch: false, SearchMode: 0 });

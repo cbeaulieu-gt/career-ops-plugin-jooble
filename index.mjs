@@ -101,7 +101,7 @@ function retryDelay(error, attempt) {
 async function fetchPage(ctx, url, body) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      return await ctx.fetchJson(url, { method: 'POST', redirect: 'error',
+      return await ctx.fetchJson(url, { method: 'POST',
         headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     } catch (error) {
       if (attempt < 2 && retryable(error)) {
