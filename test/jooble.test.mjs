@@ -89,8 +89,8 @@ for (const invalid of [{ keywords: '', location: 'US' }, { keywords: 'engineer',
   });
 }
 
-test('rejects contexts that cannot fetch or normalize URLs', async () => {
-  for (const overrides of [{ fetchJson: undefined }, { normalizePostingUrl: undefined }]) {
+test('rejects contexts that cannot fetch', async () => {
+  for (const overrides of [{ fetchJson: undefined }]) {
     const { ctx } = context([], overrides);
     await assert.rejects(plugin.provider.fetch(entry, ctx), /context/);
   }
@@ -268,6 +268,31 @@ test('rejects malformed total counts without disclosing response text', async ()
     const { ctx } = context([{ totalCount, jobs: [row()] }]);
     await assert.rejects(plugin.provider.fetch(entry, ctx), /malformed/);
   }
+});
+
+test('supports older engine contexts without the optional canonical URL helper', async () => {
+  const unsafeId = Number('9223372036854775807');
+  const { ctx } = context([{ totalCount: 3, jobs: [row(unsafeId), row(unsafeId),
+    row(unsafeId, { link: 'https://jooble.org/jdp/different' })] }], { normalizePostingUrl: undefined });
+  const jobs = await plugin.provider.fetch(entry, ctx);
+  assert.equal(jobs.length, 2);
+  assert.equal(jobs[0].id, `url:${row(unsafeId).link}`);
+});
+
+test('uses a conservative eight-second 429 wait when the engine omits Retry-After', async () => {
+  const error = Object.assign(new Error('limited'), { status: 429 });
+  const { ctx, delays } = context([error, { totalCount: 1, jobs: [row()] }]);
+  await plugin.provider.fetch(entry, ctx);
+  assert.deepEqual(delays, [8000]);
+});
+
+test('continues past distinct malformed pages whose rows lack both identity fields', async () => {
+  const { ctx, calls } = context([{ totalCount: 3, jobs: [{ title: 'Malformed first' }] },
+    { totalCount: 3, jobs: [{ title: 'Malformed second' }] },
+    { totalCount: 3, jobs: [row()] }]);
+  const jobs = await plugin.provider.fetch({ ...entry, max_pages: 3 }, ctx);
+  assert.equal(calls.length, 3);
+  assert.equal(jobs.length, 1);
 });
 
 let failures = 0;

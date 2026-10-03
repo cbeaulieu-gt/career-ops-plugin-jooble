@@ -3,7 +3,7 @@
 An opt-in, unlisted [Career-Ops](https://github.com/career-ops-hq/career-ops)
 provider for Jooble's authenticated **US** jobs API.
 
-Requires Career-Ops **1.35.0 or newer** for `ctx.normalizePostingUrl`, and Node.js
+Requires Career-Ops **1.35.0 or newer**, and Node.js
 18 or newer. No runtime dependencies are required.
 
 ## Install
@@ -64,7 +64,10 @@ Optional settings:
 
 Pagination stops at an empty or repeated page, at the API's total count, or at
 the configured page/result bound. A short page alone is not treated as proof
-that the results have ended. IDs and canonical posting URLs remove duplicates.
+that the results have ended. IDs and posting URLs remove duplicates. When the
+engine provides `ctx.normalizePostingUrl`, its canonical keys are used; older
+contexts use exact URLs, so links differing only in tracking parameters may
+remain separate until the scanner applies its own deduplication.
 Numeric Jooble IDs outside JavaScript's exact integer range use
 `url:<canonical-posting-url>` as their identity, avoiding rounded-ID collisions.
 
@@ -88,6 +91,7 @@ Jooble's [REST API documentation](https://help.jooble.org/en/support/solutions/a
 Transient HTTP 429/5xx responses, recognized network failures, and aborts get
 at most two retries. Each retry waits at most eight seconds; authentication and
 other non-transient failures are not retried. Retries also consume API requests.
+HTTP 429 waits eight seconds when the engine does not expose `Retry-After`.
 Malformed responses fail visibly rather than appearing to be an empty board.
 
 ## Credentials and scope

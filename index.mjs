@@ -102,6 +102,7 @@ function retryDelay(error, attempt) {
     const delay = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(value) - Date.now();
     if (Number.isFinite(delay) && delay >= 0) return Math.min(delay, 8000);
   }
+  if (error?.status === 429) return 8000;
   return Math.min(500 * 2 ** attempt, 8000);
 }
 
@@ -139,9 +140,13 @@ export default {
     fetch: async (entry, ctx) => {
       const key = text(ctx?.env?.JOOBLE_API_KEY);
       if (!key) throw new Error('jooble: JOOBLE_API_KEY must be set in .env');
-      if (typeof ctx?.fetchJson !== 'function' || typeof ctx?.normalizePostingUrl !== 'function') {
-        throw new Error('jooble: context requires fetchJson and normalizePostingUrl (Career-Ops >= 1.35.0)');
+      if (typeof ctx?.fetchJson !== 'function') {
+        throw new Error('jooble: context requires fetchJson (Career-Ops >= 1.35.0)');
       }
+      // Released 1.35 contexts lack the canonical helper added later on main.
+      // Exact URLs still provide stable identities without copying engine rules.
+      const normalizeUrl = typeof ctx.normalizePostingUrl === 'function'
+        ? ctx.normalizePostingUrl : value => value;
       const configuredPages = bounded(entry?.max_pages, 1, PAGE_LIMIT);
       const maxPages = bounded(ctx.maxPages, configuredPages, configuredPages);
       const resultLimit = bounded(entry?.max_results, RESULT_LIMIT, RESULT_LIMIT);
@@ -162,11 +167,12 @@ export default {
         let newRaw = 0;
         rawCount += payload.jobs.length;
         for (const row of payload.jobs) {
-          const rawKey = JSON.stringify([row?.id, row?.link]);
+          const rawKey = JSON.stringify(row?.id === undefined && row?.link === undefined
+            ? row : [row?.id, row?.link]);
           if (!rawSeen.has(rawKey)) { rawSeen.add(rawKey); newRaw += 1; }
-          const job = normalizeResult(row, ctx.normalizePostingUrl);
+          const job = normalizeResult(row, normalizeUrl);
           if (!job) continue;
-          const urlKey = ctx.normalizePostingUrl(job.url);
+          const urlKey = normalizeUrl(job.url);
           if (seenIds.has(job.id) || (urlKey && seenUrls.has(urlKey))) continue;
           seenIds.add(job.id);
           if (urlKey) seenUrls.add(urlKey);
