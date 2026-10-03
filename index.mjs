@@ -143,7 +143,7 @@ export default {
       if (typeof ctx?.fetchJson !== 'function') {
         throw new Error('jooble: context requires fetchJson (Career-Ops >= 1.35.0)');
       }
-      // Released 1.35 contexts lack the canonical helper added later on main.
+      // Some engine contexts omit the canonical helper.
       // Exact URLs still provide stable identities without copying engine rules.
       const normalizeUrl = typeof ctx.normalizePostingUrl === 'function'
         ? ctx.normalizePostingUrl : value => value;
