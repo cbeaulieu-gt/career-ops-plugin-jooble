@@ -17,6 +17,7 @@ prefer the one-page default unless the user requests broader coverage.
 ## Scanner entry
 
 ```yaml
+job_boards:
   - name: Jooble - Software Engineer
     provider: jooble
     careers_url: https://jooble.org
