@@ -310,6 +310,17 @@ test('counts unique raw rows before stopping at totalCount across overlapping pa
   assert.equal(jobs.length, 4);
 });
 
+test('continues past malformed pages with null or blank identity fields', async () => {
+  for (const identity of [{ id: null, link: null }, { id: '', link: ' ' }, { id: [], link: {} }]) {
+    const { ctx, calls } = context([{ totalCount: 3, jobs: [{ ...identity, title: 'First' }] },
+      { totalCount: 3, jobs: [{ ...identity, title: 'Second' }] },
+      { totalCount: 3, jobs: [row()] }]);
+    const jobs = await plugin.provider.fetch({ ...entry, max_pages: 3 }, ctx);
+    assert.equal(calls.length, 3);
+    assert.equal(jobs.length, 1);
+  }
+});
+
 let failures = 0;
 for (const { name, run } of cases) {
   try { await run(); console.log(`PASS ${name}`); }

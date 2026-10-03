@@ -167,8 +167,8 @@ export default {
         if (payload.jobs.length === 0) break;
         let newRaw = 0;
         for (const row of payload.jobs) {
-          const rawKey = JSON.stringify(row?.id === undefined && row?.link === undefined
-            ? row : [row?.id, row?.link]);
+          const hasId = text(row?.id) || (typeof row?.id === 'number' && Number.isFinite(row.id));
+          const rawKey = JSON.stringify(!hasId && !text(row?.link) ? row : [row?.id, row?.link]);
           if (!rawSeen.has(rawKey)) { rawSeen.add(rawKey); newRaw += 1; }
           const job = normalizeResult(row, normalizeUrl);
           if (!job) continue;
