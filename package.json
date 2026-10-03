@@ -1,0 +1,12 @@
+{
+  "name": "career-ops-plugin-jooble",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "test": "node test/jooble.test.mjs && node test/smoke.mjs",
+    "check": "node --check index.mjs"
+  }
+}
